@@ -11,57 +11,46 @@
     --transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
 }
 
-/* Анимированный градиентный фон */
+/* Основные стили */
 body {
-    font-family: 'Montserrat', 'Segoe UI', sans-serif;
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     color: var(--text);
     margin: 0;
     padding: 0;
     min-height: 100vh;
-    background: linear-gradient(-45deg, var(--bg-dark), var(--bg-light), #3a5169, #2d3b4a);
-    background-size: 400% 400%;
-    animation: gradientBG 15s ease infinite;
+    background: linear-gradient(135deg, var(--bg-dark), var(--bg-light));
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 20px;
     text-align: center;
-}
-
-@keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    line-height: 1.6;
 }
 
 /* Главный контейнер */
 .app-container {
     background: var(--card-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 30px;
-    width: 100%;
-    max-width: 500px;
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transform: translateY(0);
-    transition: var(--transition);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
+    padding: 2.5rem;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    margin: 2rem auto;
+    transform-style: preserve-3d;
+    perspective: 1000px;
 }
 
-.app-container:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-}
-
-/* Заголовок с анимацией */
+/* Заголовок */
 h1 {
     color: var(--ripe-light);
-    margin-bottom: 15px;
-    font-size: 2.2rem;
+    margin: 0 0 1.5rem 0;
+    font-size: 2.4rem;
     font-weight: 700;
-    text-shadow: 0 2px 10px rgba(255, 107, 107, 0.3);
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
     position: relative;
     display: inline-block;
 }
@@ -69,69 +58,112 @@ h1 {
 h1::after {
     content: '';
     position: absolute;
-    bottom: -8px;
+    bottom: -12px;
     left: 50%;
     transform: translateX(-50%);
-    width: 60px;
-    height: 3px;
+    width: 80px;
+    height: 4px;
     background: linear-gradient(90deg, var(--ripe), var(--unripe));
-    border-radius: 3px;
+    border-radius: 4px;
+    opacity: 0.8;
 }
 
+/* Описание */
 .description {
     color: var(--text-secondary);
-    margin-bottom: 30px;
+    margin: 0 0 2rem 0;
     font-size: 1.1rem;
-    line-height: 1.6;
+    font-weight: 400;
+    max-width: 380px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-/* Стили для камеры */
+/* Контейнер камеры */
 #webcam-container {
     width: 100%;
-    max-width: 400px;
-    margin: 0 auto;
+    max-width: 360px;
+    margin: 0 auto 2rem;
     position: relative;
-    border-radius: 15px;
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-    transform: scale(1);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+    transform: translateZ(20px);
     transition: var(--transition);
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    aspect-ratio: 1/1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
 }
 
-#webcam-container.active {
-    border: 2px solid var(--ripe-light);
-    box-shadow: 0 0 20px rgba(255, 107, 107, 0.4);
+#webcam-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    padding: 2px;
+    background: linear-gradient(135deg, var(--ripe-light), var(--unripe-light));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0;
+    transition: var(--transition);
+}
+
+#webcam-container.active::before {
+    opacity: 0.6;
+}
+
+#webcam {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
 }
 
 canvas {
     width: 100%;
+    height: 100%;
     display: block;
-    transition: var(--transition);
 }
 
-/* Кнопки с эффектом наведения */
+/* Кнопки */
 #controls {
     display: flex;
     justify-content: center;
-    margin: 25px 0;
-    gap: 15px;
+    margin: 1.5rem 0;
+    gap: 1rem;
 }
 
 button {
-    background: linear-gradient(135deg, var(--ripe), #ff8e8e);
+    background: linear-gradient(135deg, var(--ripe), var(--ripe-light));
     color: white;
     border: none;
-    padding: 14px 30px;
+    padding: 0.9rem 2rem;
     font-size: 1rem;
     border-radius: 50px;
     cursor: pointer;
     transition: var(--transition);
     font-weight: 600;
     letter-spacing: 0.5px;
-    box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+    box-shadow: 0 6px 16px rgba(255, 107, 107, 0.3);
     position: relative;
     overflow: hidden;
+    min-width: 180px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+button:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 24px rgba(255, 107, 107, 0.4);
+}
+
+button:active {
+    transform: translateY(1px);
 }
 
 button::before {
@@ -142,38 +174,28 @@ button::before {
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: 0.5s;
-}
-
-button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+    transition: 0.6s;
 }
 
 button:hover::before {
     left: 100%;
 }
 
-button:active {
-    transform: translateY(1px);
-}
-
 #stop {
-    background: linear-gradient(135deg, var(--unripe), #6ce0d9);
-    box-shadow: 0 5px 15px rgba(78, 205, 196, 0.3);
+    background: linear-gradient(135deg, var(--unripe), var(--unripe-light));
+    box-shadow: 0 6px 16px rgba(78, 205, 196, 0.3);
 }
 
 #stop:hover {
-    box-shadow: 0 8px 25px rgba(78, 205, 196, 0.4);
+    box-shadow: 0 10px 24px rgba(78, 205, 196, 0.4);
 }
 
-/* Результаты с анимацией появления */
+/* Результаты */
 #results {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 25px;
-    margin-top: 25px;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 1.5rem;
     opacity: 0;
     transform: translateY(20px);
     transition: var(--transition);
@@ -186,54 +208,51 @@ button:active {
 
 .counters {
     background: rgba(255, 255, 255, 0.08);
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    min-width: 220px;
-    backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 280px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 1.5rem;
 }
 
-.counters h3 {
-    margin-bottom: 15px;
+.counters h2 {
     color: var(--text);
-    font-size: 1.2rem;
+    font-size: 1.3rem;
+    margin: 0 0 1rem 0;
+    font-weight: 600;
 }
 
 .counter {
     display: flex;
     align-items: center;
-    margin: 12px 0;
+    margin: 0.8rem 0;
     font-size: 1.1rem;
+    justify-content: space-between;
+}
+
+.counter-value {
+    font-weight: 600;
+    margin-left: 0.5rem;
 }
 
 .counter-color {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    margin-right: 12px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-}
-
-/* Диаграмма */
-#chart-container {
-    width: 220px;
-    height: 220px;
-    position: relative;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    padding: 10px;
-    backdrop-filter: blur(5px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-right: 0.8rem;
+    box-shadow: 0 0 12px rgba(0,0,0,0.2);
+    flex-shrink: 0;
 }
 
 /* Индикатор загрузки */
 .loading {
     display: none;
-    text-align: center;
-    margin: 25px 0;
     flex-direction: column;
     align-items: center;
+    margin: 1.5rem 0;
 }
 
 .loading.show {
@@ -247,14 +266,15 @@ button:active {
     width: 50px;
     height: 50px;
     animation: spin 1s linear infinite;
-    margin-bottom: 15px;
+    margin-bottom: 1rem;
     box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
 }
 
 .loading p {
     color: var(--text-secondary);
     font-size: 1rem;
-    margin-top: 10px;
+    margin-top: 0.5rem;
+    animation: pulse 2s ease-in-out infinite;
 }
 
 /* Анимации */
@@ -264,20 +284,25 @@ button:active {
 }
 
 @keyframes pulse {
-    0% { opacity: 0.6; }
+    0%, 100% { opacity: 0.6; }
     50% { opacity: 1; }
-    100% { opacity: 0.6; }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
 }
 
 /* Адаптивность */
 @media (max-width: 600px) {
     .app-container {
-        padding: 20px;
-        border-radius: 15px;
+        padding: 1.5rem;
+        width: 95%;
+        border-radius: 20px;
     }
     
     h1 {
-        font-size: 1.8rem;
+        font-size: 2rem;
     }
     
     .description {
@@ -286,22 +311,19 @@ button:active {
     
     #controls {
         flex-direction: column;
-        align-items: center;
+        gap: 0.8rem;
     }
     
     button {
         width: 100%;
-        max-width: 250px;
+        padding: 0.8rem;
     }
     
-    #results {
-        flex-direction: column;
-        align-items: center;
-        gap: 15px;
-    }
-    
-    .counters, #chart-container {
-        width: 100%;
+    #webcam-container {
         max-width: 300px;
+    }
+    
+    .counters {
+        max-width: 100%;
     }
 }
