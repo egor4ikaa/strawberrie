@@ -9,38 +9,40 @@
     <link src="stylesheet" href="berries.css">
 </head>
 <body>
-    <h1>🍓 Анализатор клубники</h1>
-    <p class="description">Наведите камеру на куст для анализа спелости ягод</p>
-    
-    <div id="webcam-container">
-        <video id="webcam" autoplay playsinline></video>
-    </div>
-    
-    <div id="controls">
-        <button id="start">Запустить камеру</button>
-        <button id="stop" style="background: var(--unripe); display: none;">Остановить</button>
-    </div>
-    
-    <div class="loading">
-        <div class="spinner"></div>
-        <p>Загрузка модели...</p>
-    </div>
-    
-    <div id="results" style="display: none;">
-        <div class="counters">
-            <h3>Количество ягод</h3>
-            <div class="counter">
-                <div class="counter-color" style="background: var(--ripe);"></div>
-                <span id="ripe-count">0</span> спелых
-            </div>
-            <div class="counter">
-                <div class="counter-color" style="background: var(--unripe);"></div>
-                <span id="unripe-count">0</span> неспелых
-            </div>
+    <div class="app-container">
+        <h1>🍓 Анализатор клубники</h1>
+        <p class="description">Наведите камеру на куст клубники, чтобы определить количество спелых и неспелых ягод</p>
+        
+        <div id="webcam-container">
+            <video id="webcam" autoplay playsinline></video>
         </div>
         
-        <div id="chart-container">
-            <canvas id="chart"></canvas>
+        <div id="controls">
+            <button id="start">Запустить камеру</button>
+            <button id="stop" style="display: none;">Остановить</button>
+        </div>
+        
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Загружаем модель...</p>
+        </div>
+        
+        <div id="results">
+            <div class="counters">
+                <h3>Количество ягод</h3>
+                <div class="counter">
+                    <div class="counter-color" style="background: var(--ripe); box-shadow: 0 0 10px var(--ripe-light);"></div>
+                    <span id="ripe-count">0</span> спелых
+                </div>
+                <div class="counter">
+                    <div class="counter-color" style="background: var(--unripe); box-shadow: 0 0 10px var(--unripe-light);"></div>
+                    <span id="unripe-count">0</span> неспелых
+                </div>
+            </div>
+            
+            <div id="chart-container">
+                <canvas id="chart"></canvas>
+            </div>
         </div>
     </div>
     
