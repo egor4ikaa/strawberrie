@@ -86,7 +86,7 @@ h1::after {
     color: var(--text-dark);
     font-size: 1rem;
     line-height: 1.5;
-    marhig-top: 10px;
+    margin-top: 10px;
 }
 
 #webcam-container {
