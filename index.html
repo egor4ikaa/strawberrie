@@ -113,6 +113,12 @@
                 
                 // Запускаем обработку
                 window.requestAnimationFrame(loop);
+                // проверка сорта
+                if (currentMode === 'variety') {
+                MODELS.variety.details = await loadVarietyData();
+                // Обновляем список классов на основе загруженных данных
+                MODELS.variety.classes = Object.keys(MODELS.variety.details);
+        }
                 
             } catch (error) {
                 console.error("Ошибка:", error);
@@ -170,6 +176,32 @@
             
             // Обновляем диаграмму
             updateChart(ripeCount, unripeCount);
+
+
+            if (topPrediction.probability > 0.5) {
+            const variety = topPrediction.className;
+            const confidence = Math.round(topPrediction.probability * 100);
+            const details = MODELS.variety.details[variety] || {};
+            
+            varietyNameEl.textContent = variety;
+            varietyConfidenceEl.textContent = `Точность: ${confidence}%`;
+            varietyDescEl.textContent = details.desc || "Описание отсутствует";
+            varietyPeriodEl.textContent = details.period || "-";
+            varietyWeightEl.textContent = details.weight || "-";
+            
+            // Добавляем изображение сорта, если оно есть
+            if (details.img) {
+                if (!document.getElementById('variety-image')) {
+                    const img = document.createElement('img');
+                    img.id = 'variety-image';
+                    img.style.maxWidth = '100%';
+                    img.style.borderRadius = '8px';
+                    img.style.margin = '10px 0';
+                    varietyInfoEl.insertBefore(img, varietyDetailsEl);
+                }
+                document.getElementById('variety-image').src = details.img;
+            }
+        }
         }
         
         function initChart() {
@@ -228,6 +260,54 @@
             
             chart.update();
         }
+        // Вместо статического объекта MODELS.variety.details будем загружать данные с сайта
+            async function loadVarietyData() {
+            try {
+                const response = await fetch('https://api.allorigins.win/get?url=' + 
+                    encodeURIComponent('https://stroy-podskazka.ru/klubnika/sorta/'));
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const data = await response.json();
+                const parser = new DOMParser();
+                const htmlDoc = parser.parseFromString(data.contents, 'text/html');
+                
+                // Парсим данные со страницы
+                const varieties = {};
+                const items = htmlDoc.querySelectorAll('.article-item');
+                
+                items.forEach(item => {
+                    const title = item.querySelector('h2 a')?.textContent.trim();
+                    if (!title) return;
+                    
+                    const img = item.querySelector('img')?.src;
+                    const desc = item.querySelector('.article-excerpt')?.textContent.trim();
+                    
+                    // Извлекаем дополнительные характеристики (пример)
+                    let period = '-', weight = '-';
+                    const text = item.textContent;
+                    
+                    if (text.includes('созревания')) {
+                        period = text.match(/созревания[^\.]+/i)?.[0] || '-';
+                    }
+                    if (text.includes('вес')) {
+                        weight = text.match(/вес[^\.]+/i)?.[0] || '-';
+                    }
+                    
+                    varieties[title] = {
+                        desc: desc || "Описание отсутствует",
+                        period,
+                        weight,
+                        img
+                    };
+                });
+                
+                return varieties;
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+                return {}; // Возвращаем пустой объект в случае ошибки
+            }
+            }
     </script>
 </body>
 </html>
