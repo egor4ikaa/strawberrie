@@ -50,19 +50,19 @@
 <div id="results" style="margin-top:20px; display:flex; flex-direction:column; align-items:center;">
 <!-- Результаты спелости -->
 <div class="counters" id="ripeness-counters">
-  <h3><i class="leaf-icon fas fa-apple-alt"></i> Количество ягод</h3>
-  <div class="counter">
-    <div class="counter-color" style="background: #4CAF50;"></div>
-    <span id="ripe-count">0</span> спелых
-  </div>
-  <div class="counter">
-    <div class="counter-color" style="background: #FFC107;"></div>
-    <span id="unripe-count">0</span> неспелых
-  </div>
+<h3><i class="leaf-icon fas fa-apple-alt"></i> Количество ягод</h3>
+<div class="counter">
+  <div class="counter-color" style="background: #4CAF50;"></div>
+  <span id="ripe-count">0</span> спелых
+</div>
+<div class="counter">
+  <div class="counter-color" style="background: #FFC107;"></div>
+  <span id="unripe-count">0</span> неспелых
+</div>
 </div>
 <!-- Диаграмма -->
 <div id="chart-container" style="width:300px; height:300px;">
-  <canvas id="chart"></canvas>
+<canvas id="chart"></canvas>
 </div>
 </div>
 
@@ -72,9 +72,9 @@
 <p id="variety-name">-</p>
 <p id="variety-confidence">Точность: -%</p>
 <div id="variety-details">
-  <p><strong>Описание:</strong> <span id="variety-desc">-</span></p>
-  <p><strong>Срок созревания:</strong> <span id="variety-period">-</span></p>
-  <p><strong>Вес ягод:</strong> <span id="variety-weight">-</span></p>
+<p><strong>Описание:</strong> <span id="variety-desc">-</span></p>
+<p><strong>Срок созревания:</strong> <span id="variety-period">-</span></p>
+<p><strong>Вес ягод:</strong> <span id="variety-weight">-</span></p>
 </div>
 <img id="variety-img" src="" alt="" style="max-width:100%; border-radius:8px; display:none; margin-top:10px;">
 </div>
@@ -84,13 +84,13 @@
 // Модели
 const MODELS = {
 ripeness: {
-  url: "https://teachablemachine.withgoogle.com/models/-gv8z_sYx/",
-  classes: ["Спелые", "Неспелые"]
+url: "https://teachablemachine.withgoogle.com/models/-gv8z_sYx/",
+classes: ["Спелые", "Неспелые"]
 },
 variety: {
-  url: "https://teachablemachine.withgoogle.com/models/C15fQc8rl/", // замените на правильный URL
-  classes: [], // будет загружены динамически
-  details: {}
+url: "https://teachablemachine.withgoogle.com/models/C15fQc8rl/", // замените на правильный URL
+classes: [], // будет загружены динамически
+details: {}
 }
 };
 
@@ -127,8 +127,8 @@ const deviceSelectContainer = document.getElementById('device-select-container')
 function createModeSwitcher() {
 const container = document.getElementById('mode-selector');
 container.innerHTML = `
-  <button id="mode-ripeness" class="active"><i class="fas fa-check-circle"></i> Определение спелости</button>
-  <button id="mode-variety"><i class="fas fa-dna"></i> Определение сорта</button>
+<button id="mode-ripeness" class="active"><i class="fas fa-check-circle"></i> Определение спелости</button>
+<button id="mode-variety"><i class="fas fa-dna"></i> Определение сорта</button>
 `;
 document.getElementById('mode-ripeness').addEventListener('click', () => switchMode('ripeness'));
 document.getElementById('mode-variety').addEventListener('click', () => switchMode('variety'));
@@ -140,20 +140,20 @@ if (mode === currentMode) return;
 currentMode = mode;
 
 if (mode === 'ripeness') {
-  document.getElementById('results').style.display = 'flex';
-  varietyInfoEl.style.display = 'none';
-  descriptionEl.textContent = "Наведите камеру на куст земляники, чтобы определить количество спелых и неспелых ягод";
+document.getElementById('results').style.display = 'flex';
+varietyInfoEl.style.display = 'none';
+descriptionEl.textContent = "Наведите камеру на куст земляники, чтобы определить количество спелых и неспелых ягод";
 } else {
-  document.getElementById('results').style.display = 'none';
-  varietyInfoEl.style.display = 'block';
-  descriptionEl.textContent = "Наведите камеру на ягоду земляники, чтобы определить её сорт";
+document.getElementById('results').style.display = 'none';
+varietyInfoEl.style.display = 'block';
+descriptionEl.textContent = "Наведите камеру на ягоду земляники, чтобы определить её сорт";
 }
 
 loadModel().then(() => {
-  if (webcam) {
-    stopCamera();
-    startCamera();
-  }
+if (webcam) {
+  stopCamera();
+  startCamera();
+}
 });
 }
 
@@ -164,36 +164,37 @@ const modelURL = MODELS[currentMode].url + 'model.json';
 const metadataURL = MODELS[currentMode].url + 'metadata.json';
 
 try {
-  model = await tmImage.load(modelURL, metadataURL);
-  maxPredictions = model.getTotalClasses();
+model = await tmImage.load(modelURL, metadataURL);
+maxPredictions = model.getTotalClasses();
 
-  if (currentMode === 'variety') {
-    // Загрузка деталей сортов
-    // Замените на свои данные
-    MODELS.variety.details = {
-      "Сорт1": {
-        desc: "Описание сорта 1",
-        period: "Июль - Август",
-        weight: "10-15 г",
-        img: "https://example.com/sort1.jpg"
-      },
-      "Сорт2": {
-        desc: "Описание сорта 2",
-        period: "Июль - Сентябрь",
-        weight: "12-18 г",
-        img: "https://example.com/sort2.jpg"
-      }
-    };
-    MODELS.variety.classes = Object.keys(MODELS.variety.details);
-  }
+if (currentMode === 'variety') {
+  // Загрузка деталей сортов
+  // Замените на свои данные
+  MODELS.variety.details = {
+    "Сорт1": {
+      desc: "Описание сорта 1",
+      period: "Июль - Август",
+      weight: "10-15 г",
+      img: "https://example.com/sort1.jpg"
+    },
+    "Сорт2": {
+      desc: "Описание сорта 2",
+      period: "Июль - Сентябрь",
+      weight: "12-18 г",
+      img: "https://example.com/sort2.jpg"
+    }
+  };
+  MODELS.variety.classes = Object.keys(MODELS.variety.details);
+}
 } catch (e) {
-  console.error("Ошибка загрузки модели:", e);
+console.error("Ошибка загрузки модели:", e);
 }
 loadingEl.style.display = 'none';
 }
 
 // Получение устройств
 async function getVideoDevices() {
+try {
 devices = await navigator.mediaDevices.enumerateDevices();
 const videoDevices = devices.filter(device => device.kind === 'videoinput');
 // Очистка селектора
@@ -214,176 +215,191 @@ if (videoDevices.length > 1) {
 if (videoDevices.length > 0) {
   currentDeviceId = videoDevices[0].deviceId;
 }
+} catch (err) {
+console.error('Ошибка при получении устройств:', err);
+}
 }
 
 // Запуск камеры с выбранным устройством
 async function startCamera() {
-    try {
-        await getVideoDevices();
-        
-        // Останавливаем старое видео, если есть
-        if (webcam) {
-            webcam.stop();
-        }
-        
-        // Создаем новую модель
-        const constraints = {
-            deviceId: currentDeviceId ? { exact: currentDeviceId } : undefined,
-            facingMode: "environment"
-        };
-        
-        webcam = new tmImage.Webcam(400, 400, true); // width, height, flip
-        await webcam.setup(constraints);
-        await webcam.play();
-        
-        // Используем canvas от webcam вместо прямого назначения srcObject
-        document.getElementById('webcam').srcObject = webcam.webcamStream;
-        
-        startBtn.style.display = 'none';
-        stopBtn.style.display = 'inline-block';
-        switchBtn.style.display = 'inline-block';
-        
-        // Запускаем цикл предсказания
-        loop();
-    } catch (err) {
-        alert('Ошибка доступа к камере: ' + err);
-        console.error(err);
-    }
+  try {
+      await getVideoDevices();
+      
+      // Останавливаем старое видео, если есть
+      if (webcam) {
+          webcam.stop();
+      }
+      
+      // Создаем новую модель
+      const constraints = {
+          video: {
+              deviceId: currentDeviceId ? { exact: currentDeviceId } : undefined,
+              facingMode: "environment",
+              width: { ideal: 400 },
+              height: { ideal: 400 }
+          }
+      };
+      
+      // Получаем поток с камеры
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      // Инициализируем вебкамеру Teachable Machine
+      webcam = new tmImage.Webcam(400, 400, true); // width, height, flip
+      await webcam.setup(constraints);
+      await webcam.play();
+      
+      // Назначаем поток элементу video
+      document.getElementById('webcam').srcObject = stream;
+      
+      startBtn.style.display = 'none';
+      stopBtn.style.display = 'inline-block';
+      switchBtn.style.display = 'inline-block';
+      
+      // Запускаем цикл предсказания
+      loop();
+  } catch (err) {
+      alert('Ошибка доступа к камере: ' + err);
+      console.error(err);
+  }
 }
 
-    function stopCamera() {
-    if (webcam) {
-        webcam.stop();
-        document.getElementById('webcam').srcObject = null;
-        startBtn.style.display = 'inline-block';
-        stopBtn.style.display = 'none';
-        switchBtn.style.display = 'none';
-    }
-    }
+function stopCamera() {
+  if (webcam) {
+      webcam.stop();
+      const videoElement = document.getElementById('webcam');
+      if (videoElement.srcObject) {
+          videoElement.srcObject.getTracks().forEach(track => track.stop());
+          videoElement.srcObject = null;
+      }
+      startBtn.style.display = 'inline-block';
+      stopBtn.style.display = 'none';
+      switchBtn.style.display = 'none';
+  }
+}
 
-    // Обработчик переключения камеры
-    document.getElementById('switch-camera').addEventListener('click', () => {
-    // Переключение между устройствами
-    if (devices.length > 1) {
-        const currentIndex = devices.findIndex(d => d.deviceId === currentDeviceId);
-        const nextIndex = (currentIndex + 1) % devices.length;
-        currentDeviceId = devices[nextIndex].deviceId;
-        startCamera();
-    }
-    });
+// Обработчик переключения камеры
+document.getElementById('switch-camera').addEventListener('click', () => {
+  // Переключение между устройствами
+  if (devices.length > 1) {
+      const currentIndex = devices.findIndex(d => d.deviceId === currentDeviceId);
+      const nextIndex = (currentIndex + 1) % devices.length;
+      currentDeviceId = devices[nextIndex].deviceId;
+      startCamera();
+  }
+});
 
 // Обработчик выбора устройства из списка
 document.getElementById('videoSource').addEventListener('change', (e) => {
-    currentDeviceId = e.target.value;
-    startCamera();
+  currentDeviceId = e.target.value;
+  startCamera();
 });
 
 // Предсказание
 async function predict() {
-    if (!model) return;
-    const prediction = await model.predict(webcam.canvas);
-    if (currentMode === 'ripeness') {
-    let ripe = 0, unripe = 0;
-    for (let i=0; i<maxPredictions; i++) {
-        const pred = prediction[i];
-        if (pred.probability > 0.7) {
-        if (pred.className === "Спелые") {
-            ripe++;
-        } else if (pred.className === "Неспелые") {
-            unripe++;
-        }
-        }
-    }
-    document.getElementById('ripe-count').textContent = ripe;
-    document.getElementById('unripe-count').textContent = unripe;
-    updateChart(ripe, unripe);
-    } else if (currentMode === 'variety') {
-    let top = { className: "", probability: 0 };
-    for (let i=0; i<maxPredictions; i++) {
-        if (prediction[i].probability > top.probability) {
-        top = prediction[i];
-        }
-    }
-    if (top.probability > 0.5) {
-        const className = top.className;
-        const confidence = Math.round(top.probability * 100);
-        const details = MODELS.variety.details[className] || {desc:"", period:"", weight:"", img:""};
-        varietyNameEl.textContent = className;
-        varietyConfidenceEl.textContent = `Точность: ${confidence}%`;
-        document.getElementById('variety-desc').textContent = details.desc || "-";
-        document.getElementById('variety-period').textContent = details.period || "-";
-        document.getElementById('variety-weight').textContent = details.weight || "-";
+  if (!model) return;
+  const prediction = await model.predict(webcam.canvas);
+  if (currentMode === 'ripeness') {
+  let ripe = 0, unripe = 0;
+  for (let i=0; i<maxPredictions; i++) {
+      const pred = prediction[i];
+      if (pred.probability > 0.7) {
+      if (pred.className === "Спелые") {
+          ripe++;
+      } else if (pred.className === "Неспелые") {
+          unripe++;
+      }
+      }
+  }
+  document.getElementById('ripe-count').textContent = ripe;
+  document.getElementById('unripe-count').textContent = unripe;
+  updateChart(ripe, unripe);
+  } else if (currentMode === 'variety') {
+  let top = { className: "", probability: 0 };
+  for (let i=0; i<maxPredictions; i++) {
+      if (prediction[i].probability > top.probability) {
+      top = prediction[i];
+      }
+  }
+  if (top.probability > 0.5) {
+      const className = top.className;
+      const confidence = Math.round(top.probability * 100);
+      const details = MODELS.variety.details[className] || {desc:"", period:"", weight:"", img:""};
+      varietyNameEl.textContent = className;
+      varietyConfidenceEl.textContent = `Точность: ${confidence}%`;
+      document.getElementById('variety-desc').textContent = details.desc || "-";
+      document.getElementById('variety-period').textContent = details.period || "-";
+      document.getElementById('variety-weight').textContent = details.weight || "-";
 
-        if (details.img) {
-        varietyImgEl.src = details.img;
-        varietyImgEl.style.display = 'block';
-        } else {
-        varietyImgEl.style.display = 'none';
-        }
-    }
-    }
-    window.requestAnimationFrame(loop);
+      if (details.img) {
+      varietyImgEl.src = details.img;
+      varietyImgEl.style.display = 'block';
+      } else {
+      varietyImgEl.style.display = 'none';
+      }
+  }
+  }
+  window.requestAnimationFrame(loop);
 }
 
 // Инициализация графика
 function initChart() {
-    const ctx = document.getElementById('chart').getContext('2d');
-    chart = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-        labels: ['Спелые', 'Неспелые'],
-        datasets: [{
-        data: [0, 0],
-        backgroundColor: ['#4CAF50', '#FFC107'],
-        borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        legend: { position: 'bottom' }
-    }
-    });
+  const ctx = document.getElementById('chart').getContext('2d');
+  chart = new Chart(ctx, {
+  type: 'doughnut',
+  data: {
+      labels: ['Спелые', 'Неспелые'],
+      datasets: [{
+      data: [0, 0],
+      backgroundColor: ['#4CAF50', '#FFC107'],
+      borderWidth: 1
+      }]
+  },
+  options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      legend: { position: 'bottom' }
+  }
+  });
 }
 
 function updateChart(ripe, unripe) {
-    chart.data.datasets[0].data = [ripe, unripe];
-    chart.update();
+  chart.data.datasets[0].data = [ripe, unripe];
+  chart.update();
 }
 
 // Обработчики кнопок
 document.getElementById('start').addEventListener('click', () => {
-    startCamera();
+  startCamera();
 });
 document.getElementById('stop').addEventListener('click', () => {
-    stopCamera();
+  stopCamera();
 });
 document.getElementById('switch-camera').addEventListener('click', () => {
-    if (devices.length > 1) {
-    const currentIndex = devices.findIndex(d => d.deviceId === currentDeviceId);
-    const nextIndex = (currentIndex + 1) % devices.length;
-    currentDeviceId = devices[nextIndex].deviceId;
-    startCamera();
-    }
+  if (devices.length > 1) {
+  const currentIndex = devices.findIndex(d => d.deviceId === currentDeviceId);
+  const nextIndex = (currentIndex + 1) % devices.length;
+  currentDeviceId = devices[nextIndex].deviceId;
+  startCamera();
+  }
 });
 
 // Инициализация
 window.addEventListener('load', () => {
-    createModeSwitcher();
-    initChart();
-    switchMode('ripeness');
-    getVideoDevices(); // Получить список устройств при загрузке
+  createModeSwitcher();
+  initChart();
+  switchMode('ripeness');
+  getVideoDevices(); // Получить список устройств при загрузке
 });
 
 // Основной цикл
 async function loop() {
-    if (webcam) {
-    webcam.update();
-    await predict();
-    }
-    if (webcam) {
-    window.requestAnimationFrame(loop);
-    }
+  if (webcam) {
+  webcam.update();
+  await predict();
+  }
+  if (webcam) {
+  window.requestAnimationFrame(loop);
+  }
 }
 </script>
 </body>
