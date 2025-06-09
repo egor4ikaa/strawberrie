@@ -22,22 +22,16 @@
 <div class="mode-selector" id="mode-selector"></div>
 
 <!-- Контейнер для видео -->
-<div id="webcam-container" style="text-align: center; margin-top: 20px;">
-  <video id="webcam" autoplay playsinline width="400" height="400" style="border: 2px solid #ccc; border-radius: 8px;"></video>
+<div id="webcam-container">
+  <video id="webcam" autoplay playsinline></video>
   <div id="camera-error" class="error-message" style="display: none;"></div>
 </div>
 
 <!-- Управление камерой -->
-<div id="controls" style="margin-top: 10px; text-align: center;">
+<div id="controls">
   <button id="start"><i class="fas fa-camera"></i> Запустить камеру</button>
   <button id="stop" style="display: none;"><i class="fas fa-stop"></i> Остановить</button>
   <button id="switch-camera" style="display: none;"><i class="fas fa-sync-alt"></i> Переключить камеру</button>
-</div>
-
-<!-- Для выбора камеры -->
-<div id="device-select-container" style="margin-top:10px; display:none; text-align:center;">
-  <label for="videoSource">Выберите камеру:</label>
-  <select id="videoSource"></select>
 </div>
 
 <!-- Загрузка модели -->
@@ -47,8 +41,7 @@
 </div>
 
 <!-- Результаты -->
-<div id="results" style="margin-top:20px; display:flex; flex-direction:column; align-items:center;">
-  <!-- Результаты спелости -->
+<div id="results">
   <div class="counters" id="ripeness-counters">
     <h3><i class="leaf-icon fas fa-apple-alt"></i> Количество ягод</h3>
     <div class="counter">
@@ -60,14 +53,13 @@
       <span id="unripe-count">0</span> неспелых
     </div>
   </div>
-  <!-- Диаграмма -->
-  <div id="chart-container" style="width:300px; height:300px;">
+  <div id="chart-container" style="width:100%; max-width:300px; margin:0 auto;">
     <canvas id="chart"></canvas>
   </div>
 </div>
 
 <!-- Информация о сорте -->
-<div id="variety-info" style="display:none; margin-top:20px; max-width:600px; padding:10px; border:1px solid #ccc; border-radius:8px;">
+<div id="variety-info" style="display:none;">
   <h3><i class="fas fa-seedling"></i> Определенный сорт</h3>
   <p id="variety-name">-</p>
   <p id="variety-confidence">Точность: -%</p>
@@ -88,20 +80,20 @@ const MODELS = {
   },
   variety: {
     url: "https://teachablemachine.withgoogle.com/models/C15fQc8rl/",
-    // Дополнительные данные о сортах можно загружать динамически
     details: {}
   }
 };
 
-let currentMode = 'ripeness'; // режим
+let currentMode = 'ripeness';
 let model, maxPredictions;
 let webcam, webcamStream;
 let chart;
 let modelLoaded = false;
-let currentDeviceId = null; // выбранное устройство
-let devices = [];
 let isCameraRunning = false;
 let predictionLoopId = null;
+let currentFacingMode = "environment"; // По умолчанию задняя камера
+let devices = [];
+let currentDeviceId = null;
 
 // Элементы
 const startBtn = document.getElementById('start');
@@ -110,10 +102,8 @@ const switchBtn = document.getElementById('switch-camera');
 const loadingEl = document.getElementById('loading');
 const descriptionEl = document.getElementById('main-description');
 const cameraErrorEl = document.getElementById('camera-error');
-
 const ripeCountEl = document.getElementById('ripe-count');
 const unripeCountEl = document.getElementById('unripe-count');
-
 const varietyInfoEl = document.getElementById('variety-info');
 const varietyNameEl = document.getElementById('variety-name');
 const varietyConfidenceEl = document.getElementById('variety-confidence');
@@ -121,9 +111,6 @@ const varietyDescEl = document.getElementById('variety-desc');
 const varietyPeriodEl = document.getElementById('variety-period');
 const varietyWeightEl = document.getElementById('variety-weight');
 const varietyImgEl = document.getElementById('variety-img');
-
-const videoSelect = document.getElementById('videoSource');
-const deviceSelectContainer = document.getElementById('device-select-container');
 
 // Создаем переключатель режимов
 function createModeSwitcher() {
@@ -146,7 +133,7 @@ function switchMode(mode) {
   document.getElementById('mode-variety').classList.toggle('active', mode === 'variety');
 
   if (mode === 'ripeness') {
-    document.getElementById('results').style.display = 'flex';
+    document.getElementById('results').style.display = 'block';
     varietyInfoEl.style.display = 'none';
     descriptionEl.textContent = "Наведите камеру на куст земляники, чтобы определить количество спелых и неспелых ягод";
   } else {
@@ -176,19 +163,13 @@ async function loadModel() {
       model.dispose();
     }
 
-    // Загружаем модель и метаданные
     model = await tmImage.load(modelURL, metadataURL);
     maxPredictions = model.getTotalClasses();
 
     if (currentMode === 'variety') {
-      // Классы уже содержатся в модели, получаем их автоматически
       MODELS.variety.classes = model.getClassLabels();
       
-      // Если нужно добавить дополнительную информацию о сортах,
-      // можно загрузить её с сервера или оставить пустой объект
       MODELS.variety.details = {};
-      
-      // Альтернативно: можно добавить базовую информацию для всех классов
       MODELS.variety.classes.forEach(className => {
         MODELS.variety.details[className] = {
           desc: `Описание для ${className}`,
@@ -208,38 +189,12 @@ async function loadModel() {
   }
 }
 
-// Получение устройств
+// Получение доступных камер
 async function getVideoDevices() {
   try {
-    // Сначала запрашиваем разрешение на доступ к устройствам
     await navigator.mediaDevices.getUserMedia({ video: true });
-    
     devices = await navigator.mediaDevices.enumerateDevices();
-    const videoDevices = devices.filter(device => device.kind === 'videoinput');
-    
-    // Очистка селектора
-    videoSelect.innerHTML = '';
-    
-    videoDevices.forEach(device => {
-      const option = document.createElement('option');
-      option.value = device.deviceId;
-      option.text = device.label || `Камера ${videoSelect.length + 1}`;
-      videoSelect.appendChild(option);
-    });
-    
-    // Показываем селектор
-    if (videoDevices.length > 1) {
-      document.getElementById('device-select-container').style.display = 'block';
-    } else {
-      document.getElementById('device-select-container').style.display = 'none';
-    }
-    
-    // Устанавливаем выбранное устройство по умолчанию
-    if (videoDevices.length > 0) {
-      currentDeviceId = videoDevices[0].deviceId;
-    }
-    
-    return videoDevices;
+    return devices.filter(device => device.kind === 'videoinput');
   } catch (err) {
     console.error('Ошибка при получении устройств:', err);
     showError("Не удалось получить доступ к камере. Пожалуйста, проверьте разрешения.");
@@ -247,62 +202,59 @@ async function getVideoDevices() {
   }
 }
 
-// Запуск камеры с выбранным устройством
+// Переключение между камерами
+async function switchCamera() {
+  const videoDevices = await getVideoDevices();
+  if (videoDevices.length < 2) {
+    showError("На устройстве найдена только одна камера");
+    return;
+  }
+
+  // Меняем режим камеры
+  currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
+  
+  // Останавливаем текущую камеру
+  if (isCameraRunning) {
+    stopCamera();
+  }
+  
+  // Запускаем с новыми параметрами
+  startCamera();
+}
+
+// Запуск камеры
 async function startCamera() {
   try {
-    // Проверяем, поддерживается ли API
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error("API камеры не поддерживается в вашем браузере");
     }
 
-    // Получаем список устройств
-    const videoDevices = await getVideoDevices();
-    if (videoDevices.length === 0) {
-      throw new Error("Не найдено ни одной камеры");
-    }
-
-    // Останавливаем старую камеру, если она запущена
-    if (isCameraRunning) {
-      stopCamera();
-    }
-
-    // Показываем сообщение о загрузке
     loadingEl.style.display = 'block';
     cameraErrorEl.style.display = 'none';
 
-    // Создаем ограничения для камеры
     const constraints = {
       video: {
-        deviceId: currentDeviceId ? { exact: currentDeviceId } : undefined,
-        facingMode: "environment",
-        width: { ideal: 400 },
-        height: { ideal: 400 }
+        facingMode: currentFacingMode,
+        width: { ideal: 640 },
+        height: { ideal: 480 }
       }
     };
 
-    // Получаем поток с камеры
     const stream = await navigator.mediaDevices.getUserMedia(constraints);
     
-    // Инициализируем вебкамеру Teachable Machine
-    webcam = new tmImage.Webcam(400, 400, true); // width, height, flip
+    webcam = new tmImage.Webcam(400, 400, true);
     await webcam.setup(constraints);
     await webcam.play();
     
-    // Назначаем поток элементу video
     const videoElement = document.getElementById('webcam');
     videoElement.srcObject = stream;
     webcamStream = stream;
     
-    // Обновляем UI
     startBtn.style.display = 'none';
     stopBtn.style.display = 'inline-block';
-    if (videoDevices.length > 1) {
-      switchBtn.style.display = 'inline-block';
-    }
+    switchBtn.style.display = 'inline-block';
     
     isCameraRunning = true;
-    
-    // Запускаем цикл предсказания
     startPredictionLoop();
     
   } catch (err) {
@@ -318,8 +270,6 @@ async function startCamera() {
     }
     
     showError(errorMessage);
-    
-    // Восстанавливаем кнопку запуска
     startBtn.style.display = 'inline-block';
     stopBtn.style.display = 'none';
     switchBtn.style.display = 'none';
@@ -336,22 +286,12 @@ function stopCamera() {
   }
 
   if (webcam) {
-    try {
-      webcam.stop();
-    } catch (e) {
-      console.error("Ошибка при остановке webcam:", e);
-    }
+    webcam.stop();
   }
 
   const videoElement = document.getElementById('webcam');
   if (videoElement.srcObject) {
-    videoElement.srcObject.getTracks().forEach(track => {
-      try {
-        track.stop();
-      } catch (e) {
-        console.error("Ошибка при остановке трека:", e);
-      }
-    });
+    videoElement.srcObject.getTracks().forEach(track => track.stop());
     videoElement.srcObject = null;
   }
 
@@ -361,37 +301,25 @@ function stopCamera() {
   switchBtn.style.display = 'none';
 }
 
-// Запуск цикла предсказания
+// Цикл предсказания
 function startPredictionLoop() {
   if (!isCameraRunning) return;
 
   const loop = async () => {
-    try {
-      if (webcam && modelLoaded) {
-        webcam.update(); // Обновляем кадр с камеры
-        await predict();
-      }
-    } catch (err) {
-      console.error("Ошибка в цикле предсказания:", err);
+    if (webcam && modelLoaded) {
+      webcam.update();
+      await predict();
     }
-    
-    if (isCameraRunning) {
-      predictionLoopId = requestAnimationFrame(loop);
-    }
+    predictionLoopId = requestAnimationFrame(loop);
   };
 
   loop();
 }
 
-// Показать сообщение об ошибке
+// Показать ошибку
 function showError(message) {
   cameraErrorEl.textContent = message;
   cameraErrorEl.style.display = 'block';
-}
-
-// Скрыть сообщение об ошибке
-function hideError() {
-  cameraErrorEl.style.display = 'none';
 }
 
 // Предсказание
@@ -413,8 +341,8 @@ async function predict() {
           }
         }
       }
-      document.getElementById('ripe-count').textContent = ripe;
-      document.getElementById('unripe-count').textContent = unripe;
+      ripeCountEl.textContent = ripe;
+      unripeCountEl.textContent = unripe;
       updateChart(ripe, unripe);
     } else if (currentMode === 'variety') {
       let top = { className: "", probability: 0 };
@@ -427,11 +355,12 @@ async function predict() {
         const className = top.className;
         const confidence = Math.round(top.probability * 100);
         const details = MODELS.variety.details[className] || { desc: "", period: "", weight: "", img: "" };
+        
         varietyNameEl.textContent = className;
         varietyConfidenceEl.textContent = `Точность: ${confidence}%`;
-        document.getElementById('variety-desc').textContent = details.desc || "-";
-        document.getElementById('variety-period').textContent = details.period || "-";
-        document.getElementById('variety-weight').textContent = details.weight || "-";
+        varietyDescEl.textContent = details.desc || "-";
+        varietyPeriodEl.textContent = details.period || "-";
+        varietyWeightEl.textContent = details.weight || "-";
 
         if (details.img) {
           varietyImgEl.src = details.img;
@@ -475,38 +404,9 @@ function updateChart(ripe, unripe) {
 }
 
 // Обработчики событий
-document.getElementById('start').addEventListener('click', () => {
-  startCamera();
-});
-
-document.getElementById('stop').addEventListener('click', () => {
-  stopCamera();
-});
-
-document.getElementById('switch-camera').addEventListener('click', () => {
-  if (devices.length > 1) {
-    const videoDevices = devices.filter(d => d.kind === 'videoinput');
-    const currentIndex = videoDevices.findIndex(d => d.deviceId === currentDeviceId);
-    const nextIndex = (currentIndex + 1) % videoDevices.length;
-    currentDeviceId = videoDevices[nextIndex].deviceId;
-    startCamera();
-  }
-});
-
-videoSelect.addEventListener('change', (e) => {
-  currentDeviceId = e.target.value;
-  startCamera();
-});
-
-// Обработчик изменения видимости страницы
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    // Страница скрыта - останавливаем камеру
-    if (isCameraRunning) {
-      stopCamera();
-    }
-  }
-});
+document.getElementById('start').addEventListener('click', startCamera);
+document.getElementById('stop').addEventListener('click', stopCamera);
+document.getElementById('switch-camera').addEventListener('click', switchCamera);
 
 // Инициализация
 window.addEventListener('load', async () => {
@@ -515,13 +415,6 @@ window.addEventListener('load', async () => {
     initChart();
     await loadModel();
     switchMode('ripeness');
-    await getVideoDevices();
-    
-    // Проверяем, есть ли камеры
-    const videoDevices = devices.filter(d => d.kind === 'videoinput');
-    if (videoDevices.length === 0) {
-      showError("Камеры не обнаружены. Пожалуйста, подключите камеру.");
-    }
   } catch (err) {
     console.error("Ошибка при инициализации:", err);
     showError("Произошла ошибка при инициализации приложения.");
