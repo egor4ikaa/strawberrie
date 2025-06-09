@@ -1,191 +1,390 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-<meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Анализатор земляники садовой v1.0</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.8.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Анализатор земляники садовой v1.0</title>
+
+<!-- Библиотеки -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.8.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="berries.css" />
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 </head>
 <body>
-    <div class="app-container">
-        <span class="decoration top-left"><i class="fas fa-leaf"></i></span>
-        <span class="decoration top-right"><i class="fas fa-strawberry"></i></span>
-        <span class="decoration bottom-left"><i class="fas fa-seedling"></i></span>
-        <span class="decoration bottom-right"><i class="fas fa-tractor"></i></span>
-        
-        <h1><i class="strawberry-icon fas fa-strawberry"></i> Анализатор земляники</h1>
-        <p class="description">Наведите камеру на куст земляники, чтобы определить количество спелых и неспелых ягод</p>
-        
-        <div id="webcam-container">
-            <video id="webcam" autoplay playsinline></video>
-        </div>
-        
-        <div id="controls">
-            <button id="start"><i class="fas fa-camera"></i> Запустить камеру</button>
-            <button id="camera-switch" style="display: none;"><i class="fas fa-sync-alt"></i> Сменить камеру</button>
-            <button id="stop" style="display: none;"><i class="fas fa-stop"></i> Остановить</button>
-        </div>
-        
-        <div class="loading">
-            <div class="spinner"></div>
-            <p>Загружаем модель...</p>
-        </div>
-        
-        <div id="results">
-            <div class="counters">
-                <h3><i class="leaf-icon fas fa-apple-alt"></i> Количество ягод</h3>
-                <div class="counter">
-                    <div class="counter-color" style="background: var(--ripe);"></div>
-                    <span id="ripe-count">0</span> спелых
-                </div>
-                <div class="counter">
-                    <div class="counter-color" style="background: var(--unripe);"></div>
-                    <span id="unripe-count">0</span> неспелых
-                </div>
-            </div>
-            
-            <div id="chart-container">
-                <canvas id="chart"></canvas>
-            </div>
-        </div>
-    </div>
+<div class="app-container">
+<!-- Ваши элементы интерфейса -->
+<h1><i class="strawberry-icon fas fa-strawberry"></i> Анализатор земляники</h1>
+<p class="description" id="main-description">Наведите камеру на куст земляники, чтобы определить количество спелых и неспелых ягод</p>
 
-    <script>
-    // Добавьте в начало скрипта:
-    const MODELS = {
-        ripeness: {
-            url: "https://teachablemachine.withgoogle.com/models/-gv8z_sYx/",
-            classes: ["Спелые", "Неспелые"]
-        },
-        variety: {
-            url: "https://teachablemachine.withgoogle.com/models/C15fQc8rl/", // Замените на реальный URL модели сортов
-            classes: [], // Будет заполнено при загрузке
-            details: {} // Будет заполнено при загрузке
-        }
+<!-- Переключатель режимов -->
+<div class="mode-selector" id="mode-selector"></div>
+
+<!-- Контейнер для видео -->
+<div id="webcam-container" style="text-align: center; margin-top: 20px;">
+<video id="webcam" autoplay playsinline width="400" height="400" style="border: 2px solid #ccc; border-radius: 8px;"></video>
+</div>
+
+<!-- Управление камерой -->
+<div id="controls" style="margin-top: 10px; text-align: center;">
+<button id="start"><i class="fas fa-camera"></i> Запустить камеру</button>
+<button id="stop" style="display: none;"><i class="fas fa-stop"></i> Остановить</button>
+<button id="switch-camera" style="display: none;"><i class="fas fa-sync-alt"></i> Переключить камеру</button>
+</div>
+
+<!-- Для выбора камеры -->
+<div id="device-select-container" style="margin-top:10px; display:none; text-align:center;">
+<label for="videoSource">Выберите камеру:</label>
+<select id="videoSource"></select>
+</div>
+
+<!-- Загрузка модели -->
+<div class="loading" id="loading" style="display:none;">
+<div class="spinner"></div>
+<p>Загружаем модель...</p>
+</div>
+
+<!-- Результаты -->
+<div id="results" style="margin-top:20px; display:flex; flex-direction:column; align-items:center;">
+<!-- Результаты спелости -->
+<div class="counters" id="ripeness-counters">
+  <h3><i class="leaf-icon fas fa-apple-alt"></i> Количество ягод</h3>
+  <div class="counter">
+    <div class="counter-color" style="background: #4CAF50;"></div>
+    <span id="ripe-count">0</span> спелых
+  </div>
+  <div class="counter">
+    <div class="counter-color" style="background: #FFC107;"></div>
+    <span id="unripe-count">0</span> неспелых
+  </div>
+</div>
+<!-- Диаграмма -->
+<div id="chart-container" style="width:300px; height:300px;">
+  <canvas id="chart"></canvas>
+</div>
+</div>
+
+<!-- Информация о сорте -->
+<div id="variety-info" style="display:none; margin-top:20px; max-width:600px; padding:10px; border:1px solid #ccc; border-radius:8px;">
+<h3><i class="fas fa-seedling"></i> Определенный сорт</h3>
+<p id="variety-name">-</p>
+<p id="variety-confidence">Точность: -%</p>
+<div id="variety-details">
+  <p><strong>Описание:</strong> <span id="variety-desc">-</span></p>
+  <p><strong>Срок созревания:</strong> <span id="variety-period">-</span></p>
+  <p><strong>Вес ягод:</strong> <span id="variety-weight">-</span></p>
+</div>
+<img id="variety-img" src="" alt="" style="max-width:100%; border-radius:8px; display:none; margin-top:10px;">
+</div>
+</div>
+
+<script>
+// Модели
+const MODELS = {
+ripeness: {
+  url: "https://teachablemachine.withgoogle.com/models/-gv8z_sYx/",
+  classes: ["Спелые", "Неспелые"]
+},
+variety: {
+  url: "https://teachablemachine.withgoogle.com/models/C15fQc8rl/", // замените на правильный URL
+  classes: [], // будет загружены динамически
+  details: {}
+}
+};
+
+let currentMode = 'ripeness'; // режим
+let model, maxPredictions;
+let webcam, webcamStream;
+let chart;
+let modelLoaded = false;
+let currentDeviceId = null; // выбранное устройство
+let devices = [];
+
+// Элементы
+const startBtn = document.getElementById('start');
+const stopBtn = document.getElementById('stop');
+const switchBtn = document.getElementById('switch-camera');
+const loadingEl = document.getElementById('loading');
+const descriptionEl = document.getElementById('main-description');
+
+const ripeCountEl = document.getElementById('ripe-count');
+const unripeCountEl = document.getElementById('unripe-count');
+
+const varietyInfoEl = document.getElementById('variety-info');
+const varietyNameEl = document.getElementById('variety-name');
+const varietyConfidenceEl = document.getElementById('variety-confidence');
+const varietyDescEl = document.getElementById('variety-desc');
+const varietyPeriodEl = document.getElementById('variety-period');
+const varietyWeightEl = document.getElementById('variety-weight');
+const varietyImgEl = document.getElementById('variety-img');
+
+const videoSelect = document.getElementById('videoSource');
+const deviceSelectContainer = document.getElementById('device-select-container');
+
+// Создаем переключатель режимов
+function createModeSwitcher() {
+const container = document.getElementById('mode-selector');
+container.innerHTML = `
+  <button id="mode-ripeness" class="active"><i class="fas fa-check-circle"></i> Определение спелости</button>
+  <button id="mode-variety"><i class="fas fa-dna"></i> Определение сорта</button>
+`;
+document.getElementById('mode-ripeness').addEventListener('click', () => switchMode('ripeness'));
+document.getElementById('mode-variety').addEventListener('click', () => switchMode('variety'));
+}
+
+// Переключение режимов
+function switchMode(mode) {
+if (mode === currentMode) return;
+currentMode = mode;
+
+if (mode === 'ripeness') {
+  document.getElementById('results').style.display = 'flex';
+  varietyInfoEl.style.display = 'none';
+  descriptionEl.textContent = "Наведите камеру на куст земляники, чтобы определить количество спелых и неспелых ягод";
+} else {
+  document.getElementById('results').style.display = 'none';
+  varietyInfoEl.style.display = 'block';
+  descriptionEl.textContent = "Наведите камеру на ягоду земляники, чтобы определить её сорт";
+}
+
+loadModel().then(() => {
+  if (webcam) {
+    stopCamera();
+    startCamera();
+  }
+});
+}
+
+// Загрузка модели
+async function loadModel() {
+loadingEl.style.display = 'block';
+const modelURL = MODELS[currentMode].url + 'model.json';
+const metadataURL = MODELS[currentMode].url + 'metadata.json';
+
+try {
+  model = await tmImage.load(modelURL, metadataURL);
+  maxPredictions = model.getTotalClasses();
+
+  if (currentMode === 'variety') {
+    // Загрузка деталей сортов
+    // Замените на свои данные
+    MODELS.variety.details = {
+      "Сорт1": {
+        desc: "Описание сорта 1",
+        period: "Июль - Август",
+        weight: "10-15 г",
+        img: "https://example.com/sort1.jpg"
+      },
+      "Сорт2": {
+        desc: "Описание сорта 2",
+        period: "Июль - Сентябрь",
+        weight: "12-18 г",
+        img: "https://example.com/sort2.jpg"
+      }
     };
+    MODELS.variety.classes = Object.keys(MODELS.variety.details);
+  }
+} catch (e) {
+  console.error("Ошибка загрузки модели:", e);
+}
+loadingEl.style.display = 'none';
+}
 
-    let currentMode = 'ripeness'; // Добавьте это для управления режимами
+// Получение устройств
+async function getVideoDevices() {
+devices = await navigator.mediaDevices.enumerateDevices();
+const videoDevices = devices.filter(device => device.kind === 'videoinput');
+// Очистка селектора
+videoSelect.innerHTML = '';
+videoDevices.forEach(device => {
+  const option = document.createElement('option');
+  option.value = device.deviceId;
+  option.text = device.label || `Камера ${videoSelect.length + 1}`;
+  videoSelect.appendChild(option);
+});
+// Показываем селектор
+if (videoDevices.length > 1) {
+  document.getElementById('device-select-container').style.display = 'block';
+} else {
+  document.getElementById('device-select-container').style.display = 'none';
+}
+// Устанавливаем выбранное устройство по умолчанию
+if (videoDevices.length > 0) {
+  currentDeviceId = videoDevices[0].deviceId;
+}
+}
 
-    // Добавьте элементы интерфейса для режима сортов (перед init()):
-    const varietyNameEl = document.createElement('div');
-    varietyNameEl.className = 'variety-name';
-    varietyNameEl.textContent = '-';
-    
-    const varietyConfidenceEl = document.createElement('div');
-    varietyConfidenceEl.className = 'variety-confidence';
-    varietyConfidenceEl.textContent = 'Точность: -%';
-    
-    const varietyInfoEl = document.createElement('div');
-    varietyInfoEl.className = 'variety-info';
-    varietyInfoEl.innerHTML = `
-        <h3><i class="fas fa-seedling"></i> Определенный сорт:</h3>
-        <div class="variety-details">
-            <p><i class="fas fa-info-circle"></i> <strong>Описание:</strong> <span id="variety-desc">-</span></p>
-            <p><i class="fas fa-calendar-alt"></i> <strong>Срок созревания:</strong> <span id="variety-period">-</span></p>
-            <p><i class="fas fa-weight"></i> <strong>Вес ягод:</strong> <span id="variety-weight">-</span></p>
-        </div>
-    `;
-    
-    // Обновите функцию predict():
-    async function predict() {
-        const prediction = await model.predict(webcam.canvas);
+// Запуск камеры с выбранным устройством
+async function startCamera() {
+    try {
+        await getVideoDevices();
         
-        if (currentMode === 'ripeness') {
-            let ripeCount = 0;
-            let unripeCount = 0;
-            
-            for (let i = 0; i < maxPredictions; i++) {
-                if (prediction[i].className === "Спелые" && prediction[i].probability > 0.7) {
-                    ripeCount++;
-                } else if (prediction[i].className === "Неспелые" && prediction[i].probability > 0.7) {
-                    unripeCount++;
-                }
-            }
-            
-            ripeCountEl.textContent = ripeCount;
-            unripeCountEl.textContent = unripeCount;
-            updateChart(ripeCount, unripeCount);
-            
-        } else if (currentMode === 'variety') {
-            let topPrediction = { className: "", probability: 0 };
-            
-            for (let i = 0; i < maxPredictions; i++) {
-                if (prediction[i].probability > topPrediction.probability) {
-                    topPrediction = prediction[i];
-                }
-            }
-            
-            if (topPrediction.probability > 0.5) {
-                const variety = topPrediction.className;
-                const confidence = Math.round(topPrediction.probability * 100);
-                const details = MODELS.variety.details[variety] || {};
-                
-                varietyNameEl.textContent = variety;
-                varietyConfidenceEl.textContent = `Точность: ${confidence}%`;
-                document.getElementById('variety-desc').textContent = details.desc || "Описание отсутствует";
-                document.getElementById('variety-period').textContent = details.period || "-";
-                document.getElementById('variety-weight').textContent = details.weight || "-";
-                
-                if (details.img) {
-                    if (!document.getElementById('variety-image')) {
-                        const img = document.createElement('img');
-                        img.id = 'variety-image';
-                        img.style.maxWidth = '100%';
-                        img.style.borderRadius = '8px';
-                        img.style.margin = '10px 0';
-                        varietyInfoEl.querySelector('.variety-details').prepend(img);
-                    }
-                    document.getElementById('variety-image').src = details.img;
-                }
-            }
-        }
-    }
-
-    // Добавьте переключение режимов (перед init()):
-    function addModeSwitcher() {
-        const modeSelector = document.createElement('div');
-        modeSelector.className = 'mode-selector';
-        modeSelector.innerHTML = `
-            <button id="ripeness-mode" class="active"><i class="fas fa-check-circle"></i> Определение спелости</button>
-            <button id="variety-mode"><i class="fas fa-dna"></i> Определение сорта</button>
-        `;
-        document.querySelector('.app-container').insertBefore(modeSelector, document.querySelector('#webcam-container'));
-        
-        document.getElementById('ripeness-mode').addEventListener('click', () => switchMode('ripeness'));
-        document.getElementById('variety-mode').addEventListener('click', () => switchMode('variety'));
-    }
-
-    function switchMode(mode) {
-        if (currentMode === mode) return;
-        currentMode = mode;
-        
-        // Обновите UI в зависимости от режима
-        if (mode === 'ripeness') {
-            document.getElementById('results').style.display = 'flex';
-            document.querySelector('.variety-info')?.remove();
-            document.querySelector('.description').textContent = 
-                "Наведите камеру на куст земляники, чтобы определить количество спелых и неспелых ягод";
-        } else {
-            document.getElementById('results').style.display = 'none';
-            document.querySelector('.app-container').appendChild(varietyInfoEl);
-            varietyInfoEl.prepend(varietyNameEl);
-            varietyInfoEl.prepend(varietyConfidenceEl);
-            document.querySelector('.description').textContent = 
-                "Наведите камеру на ягоду земляники, чтобы определить её сорт";
-        }
-        
-        // Перезагрузите камеру при смене режима
+        // Останавливаем старое видео, если есть
         if (webcam) {
-            stopCamera();
-            init();
+            webcam.stop();
         }
+        
+        // Создаем новую модель
+        const constraints = {
+            deviceId: currentDeviceId ? { exact: currentDeviceId } : undefined,
+            facingMode: "environment"
+        };
+        
+        webcam = new tmImage.Webcam(400, 400, true); // width, height, flip
+        await webcam.setup(constraints);
+        await webcam.play();
+        
+        // Используем canvas от webcam вместо прямого назначения srcObject
+        document.getElementById('webcam').srcObject = webcam.webcamStream;
+        
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'inline-block';
+        switchBtn.style.display = 'inline-block';
+        
+        // Запускаем цикл предсказания
+        loop();
+    } catch (err) {
+        alert('Ошибка доступа к камере: ' + err);
+        console.error(err);
+    }
+}
+
+    function stopCamera() {
+    if (webcam) {
+        webcam.stop();
+        document.getElementById('webcam').srcObject = null;
+        startBtn.style.display = 'inline-block';
+        stopBtn.style.display = 'none';
+        switchBtn.style.display = 'none';
+    }
     }
 
-    // Вызовите добавление переключателя в начале:
-    addModeSwitcher();
+    // Обработчик переключения камеры
+    document.getElementById('switch-camera').addEventListener('click', () => {
+    // Переключение между устройствами
+    if (devices.length > 1) {
+        const currentIndex = devices.findIndex(d => d.deviceId === currentDeviceId);
+        const nextIndex = (currentIndex + 1) % devices.length;
+        currentDeviceId = devices[nextIndex].deviceId;
+        startCamera();
+    }
+    });
+
+// Обработчик выбора устройства из списка
+document.getElementById('videoSource').addEventListener('change', (e) => {
+    currentDeviceId = e.target.value;
+    startCamera();
+});
+
+// Предсказание
+async function predict() {
+    if (!model) return;
+    const prediction = await model.predict(webcam.canvas);
+    if (currentMode === 'ripeness') {
+    let ripe = 0, unripe = 0;
+    for (let i=0; i<maxPredictions; i++) {
+        const pred = prediction[i];
+        if (pred.probability > 0.7) {
+        if (pred.className === "Спелые") {
+            ripe++;
+        } else if (pred.className === "Неспелые") {
+            unripe++;
+        }
+        }
+    }
+    document.getElementById('ripe-count').textContent = ripe;
+    document.getElementById('unripe-count').textContent = unripe;
+    updateChart(ripe, unripe);
+    } else if (currentMode === 'variety') {
+    let top = { className: "", probability: 0 };
+    for (let i=0; i<maxPredictions; i++) {
+        if (prediction[i].probability > top.probability) {
+        top = prediction[i];
+        }
+    }
+    if (top.probability > 0.5) {
+        const className = top.className;
+        const confidence = Math.round(top.probability * 100);
+        const details = MODELS.variety.details[className] || {desc:"", period:"", weight:"", img:""};
+        varietyNameEl.textContent = className;
+        varietyConfidenceEl.textContent = `Точность: ${confidence}%`;
+        document.getElementById('variety-desc').textContent = details.desc || "-";
+        document.getElementById('variety-period').textContent = details.period || "-";
+        document.getElementById('variety-weight').textContent = details.weight || "-";
+
+        if (details.img) {
+        varietyImgEl.src = details.img;
+        varietyImgEl.style.display = 'block';
+        } else {
+        varietyImgEl.style.display = 'none';
+        }
+    }
+    }
+    window.requestAnimationFrame(loop);
+}
+
+// Инициализация графика
+function initChart() {
+    const ctx = document.getElementById('chart').getContext('2d');
+    chart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Спелые', 'Неспелые'],
+        datasets: [{
+        data: [0, 0],
+        backgroundColor: ['#4CAF50', '#FFC107'],
+        borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        legend: { position: 'bottom' }
+    }
+    });
+}
+
+function updateChart(ripe, unripe) {
+    chart.data.datasets[0].data = [ripe, unripe];
+    chart.update();
+}
+
+// Обработчики кнопок
+document.getElementById('start').addEventListener('click', () => {
+    startCamera();
+});
+document.getElementById('stop').addEventListener('click', () => {
+    stopCamera();
+});
+document.getElementById('switch-camera').addEventListener('click', () => {
+    if (devices.length > 1) {
+    const currentIndex = devices.findIndex(d => d.deviceId === currentDeviceId);
+    const nextIndex = (currentIndex + 1) % devices.length;
+    currentDeviceId = devices[nextIndex].deviceId;
+    startCamera();
+    }
+});
+
+// Инициализация
+window.addEventListener('load', () => {
+    createModeSwitcher();
+    initChart();
+    switchMode('ripeness');
+    getVideoDevices(); // Получить список устройств при загрузке
+});
+
+// Основной цикл
+async function loop() {
+    if (webcam) {
+    webcam.update();
+    await predict();
+    }
+    if (webcam) {
+    window.requestAnimationFrame(loop);
+    }
+}
 </script>
+</body>
+</html>
